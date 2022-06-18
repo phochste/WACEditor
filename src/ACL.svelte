@@ -38,7 +38,8 @@ $: if (resource && profile) {
    }
 
    async function writeACL(acl: ACLType, field : string, value: boolean) {
-      await setAcl(resource,acl['agent'],field,value);
+      acl[field] = value;
+      await setAcl(resource,acl);
       await readACL(resource);
    }
 
@@ -125,7 +126,7 @@ The URL of the resource you want to protect:
                <td on:click={() => writeACL(acl, 'read', !acl['read'])}>{#if acl['read']}✓{:else}𐄂{/if}</td>
                <td on:click={() => writeACL(acl, 'write', !acl['write'])}>{#if acl['write']}✓{:else}𐄂{/if}</td>
                <td on:click={() => writeACL(acl, 'append', !acl['append'])}>{#if acl['append']}✓{:else}𐄂{/if}</td>
-               <td on:click={() => writeACL(acl, 'control', !acl['control'])}>{#if acl['controlWrite']}✓{:else}𐄂{/if}</td>
+               <td on:click={() => writeACL(acl, 'control', !acl['control'])}>{#if acl['control']}✓{:else}𐄂{/if}</td>
             {/if}
          </tr>
       {/if}
