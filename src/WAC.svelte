@@ -2,8 +2,6 @@
    import type { ProfileType } from './util';
    import type { ACLType } from './acl';
    import { getAcl, setAcl } from './acl';
-   import { fetch } from '@inrupt/solid-client-authn-browser';
-   import { universalAccess } from "@inrupt/solid-client";
 
    export let profile : ProfileType;
    export let resource : string = getResource();
@@ -95,21 +93,21 @@ The URL of the resource you want to protect:
             {/if}
             {#if acl['write']}
             <td on:click={() => writeACL(acl, 'write', false)}
-                class="danger" title="everyone can write here!">✓ (!)</td>
+                class="danger" title="everyone can write here!!">✓ (!)</td>
             {:else}
             <td on:click={() => writeACL(acl, 'write', true)}
                 class="safe" title="public can't write here">𐄂</td>
             {/if}
             {#if acl['append']}
             <td on:click={() => writeACL(acl, 'append', false)}
-                class="warning" title="everyone can append here">✓</td>
+                class="warning" title="everyone can append here!">✓</td>
             {:else}
             <td on:click={() => writeACL(acl, 'append', true)}
                 class="safe">𐄂</td>
             {/if}
             {#if acl['controlWrite']}
             <td on:click={() => writeACL(acl, 'control', false)}
-                class="fatal" title="everyone can control your pod">✓ (!!)</td>
+                class="fatal" title="everyone can control your pod!!!">✓ (!!)</td>
             {:else}
             <td on:click={() => writeACL(acl, 'control', true)}
                 class="safe" title="public can't control this">𐄂</td>

@@ -2,7 +2,7 @@
 	import Login from './Login.svelte';
 	import Logout from './Logout.svelte';
 	import Hello from './Hello.svelte';
-	import ACL from './ACL.svelte';
+	import WAC from './WAC.svelte';
 
 	export let name: string;
 	let profile: any;
@@ -24,4 +24,4 @@
 <Login bind:profile={profile}/>
 
 <Hello {profile}/>
-<ACL {profile}/>
+<WAC {profile}/>
