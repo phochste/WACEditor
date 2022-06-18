@@ -1,13 +1,16 @@
-# AcmeBase
+# WACEditor
 
-A base implementation of a Solid App with login using svelte
+A Solid App to manage access rights for your Pod resources
 
 # Usage
 
-```
-npx degit phochste/AcmeBase my-solid-app
+<img src=https://phochste.github.io/WACEditor/images/screen.png>
 
-cd my-svelte-project
-npm install
-npm run dev
-```
+- Login into your Pod
+- Select a resource URL
+- Click on the table to set the appropiate rights
+
+# Status
+
+Work in progress
+
