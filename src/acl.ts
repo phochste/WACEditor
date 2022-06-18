@@ -122,7 +122,9 @@ export async function setWACACL(resource: string, acl: ACLType) : Promise<boolea
 
    try {
       // Fetch the SolidDataset and its associated ACLs, if available:
-      const myDatasetWithAcl = await getSolidDatasetWithAcl(resource);
+      const myDatasetWithAcl = await getSolidDatasetWithAcl(resource, {
+         fetch: fetch
+      });
 
       let resourceAcl;
       if (!hasResourceAcl(myDatasetWithAcl)) {
@@ -156,7 +158,9 @@ export async function setWACACL(resource: string, acl: ACLType) : Promise<boolea
          updatedAcl = setAgentResourceAccess(resourceAcl, acl['agent'] ,aclUpdate);
       }
 
-      result = await saveAclFor(myDatasetWithAcl, updatedAcl) ? true : false;
+      result = await saveAclFor(myDatasetWithAcl, updatedAcl, {
+         fetch: fetch
+      }) ? true : false;
    }
    catch (e) {
       console.log(`WAC error ${e}`);
