@@ -128,7 +128,7 @@ The URL of the resource you want to protect:
 <hr>
 
 <p>
-   <b>Step 2:</b> Ok, who can do what with your resource <b>{resource}</b> ?
+   <b>Step 2:</b> Ok, access/edit/control your resource <b>{resource}</b> ?
 </p>
 
   {#if acls}
@@ -235,7 +235,7 @@ The URL of the resource you want to protect:
 
 <hr>
 
-<p><b>Step 3:</b> You need to add more access rights?</p>
+<p><b>Step 3:</b> You need to more access rights?</p>
 
 <p><b>Add access rights for a person</b></p>
 <form id="agentACL" on:submit|preventDefault={onAgentAcl}>
