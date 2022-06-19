@@ -106,8 +106,7 @@ export async function setWACACL(resource: string, acl: ACLType) : Promise<boolea
    let result : boolean = false;
 
    try {
-      // Fetch the SolidDataset and its associated ACLs, if available:
-      let myDatasetWithAcl = await getSolidDatasetWithAcl(resource, {
+      let myDatasetWithAcl = await getResourceInfoWithAcl(resource, {
          fetch: fetch
       });
 
