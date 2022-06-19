@@ -26,8 +26,9 @@ $: if (resource && profile) {
    async function readACL(url) {
       acls = await getAcl(url);
 
+      resource = url;
+      
       if (acls) {
-         resource = url;
          history.pushState({},undefined, location.protocol + '//' + location.host + location.pathname + '?resource=' + resource);
       }
       else {
