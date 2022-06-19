@@ -159,7 +159,7 @@ The URL of the resource you want to protect:
                {#if acl['id'] == profile.webId }
                <td><i>You</i></td>
                {:else}
-               <td><i>{acl['id]']}</i></td>
+               <td><i>Agent</i> {acl['id']}</td>
                {/if}
                <td on:click={() => writeACL(acl, 'read', !acl['read'])}>{#if acl['read']}✓{:else}𐄂{/if}</td>
                <td on:click={() => writeACL(acl, 'write', !acl['write'])}>{#if acl['write']}✓{:else}𐄂{/if}</td>
