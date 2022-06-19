@@ -2,25 +2,35 @@
    import type { ProfileType } from './util';
    import type { ACLType } from './acl';
    import { getAcl, setAcl } from './acl';
+   import { session_url } from './store';
 
    export let profile : ProfileType;
-   export let resource : string = getResource();
+   export let resource : string;
 
    let acls : ACLType[];
    let error : string;
 
+   session_url.subscribe(url => {
+      if (url) {
+         getResource(url);
+      }
+   });
+
 $: if (resource && profile) {
       readACL(resource);
-   }
+}
 
-   function getResource() {
-		const queryString = window.location.search;
-      console.log(`>>${window.location.search}`);
+   function getResource(url: string) {
+      let queryString = url.replace(/.*\?/,'');
+      console.log(`queryString: %s`, queryString);
 		const urlParams = new URLSearchParams(queryString);
-      console.log(`>>${urlParams}`);
-		const resource = urlParams.get('resource');
-		console.log(`resource: ${resource}`);
-		return resource;
+      console.log(`urlParams: %O`, urlParams);
+		const newResource = urlParams.get('resource');
+
+      if (! resource || (resource && newResource != resource)) {
+		   console.log(`resource: ${newResource}`);
+		   resource = newResource;
+      }
 	}
 
    async function readACL(url) {

@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { handleIncomingRedirect, login } from '@inrupt/solid-client-authn-browser';
+    import { onMount } from 'svelte';
+    import { handleIncomingRedirect, login, onSessionRestore, getDefaultSession, onLogin, onLogout } from '@inrupt/solid-client-authn-browser';
+    import { session_url} from './store';
     import { fetchUserProfile } from './util';
     import type { ProfileType } from './util';
 
@@ -12,12 +14,6 @@
     const onConnect = (ev) => { showConnect = false };
     const cancelConnect = (ev) => { showConnect = true };
 
-    handleIncomingRedirect({ restorePreviousSession: true })
-        .then( async info => {
-        webId = info.webId;
-        profile = await fetchUserProfile(webId);
-    });
-
     function handleLogin() {
         console.log(`Login to : ${issuer} redirect : ${window.location.href}`);
         login({
@@ -26,14 +22,31 @@
             clientName: "FormViewer"
         });
     }
+
+    onLogin( () => sessionChanged() );
+    onSessionRestore( (url) => sessionChanged(url));
+
+    async function sessionChanged(url?: string) {
+      let session = getDefaultSession();
+      webId = session.info.webId;
+      profile = await fetchUserProfile(webId); 
+      if (url) {
+        window.history.pushState({},undefined,url);
+        session_url.update( () => url );
+      }
+    }
+
+    onMount( () => {
+      handleIncomingRedirect({ 
+          restorePreviousSession: true,
+          url: window.location.href
+      });
+    });
 </script>
 
 {#if ! profile}
    {#if showConnect}
       <button on:click|preventDefault={onConnect}>Login</button> 
-      <p>
-        You need to login in your Pod to use this application.
-      </p>
    {:else}
    <form>
       <div class="row">
