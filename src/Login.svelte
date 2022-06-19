@@ -1,12 +1,11 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { handleIncomingRedirect, login, onSessionRestore, getDefaultSession, onLogin, onLogout } from '@inrupt/solid-client-authn-browser';
-    import { fetchUserProfile } from './util';
-    import type { ProfileType } from './util';
+    import { handleIncomingRedirect, login, onSessionRestore, getDefaultSession, onLogin, onLogout, type ISessionInfo } from '@inrupt/solid-client-authn-browser';
+    import { fetchUserProfile , type ProfileType } from './util';
 
     export let profile :ProfileType;
 
-    let webId : string;
+    let sessionInfo : Promise<undefined | ISessionInfo>; 
     let issuer : string;
     let showConnect : boolean = true;
 
@@ -25,12 +24,13 @@
     onLogin( () => sessionChanged() );
     onSessionRestore( (url) => sessionChanged(url));
     onLogout( () => {
-      profile = undefined;
+        profile = undefined;
+        sessionInfo = null;
     });
 
     async function sessionChanged(url?: string) {
       let session = getDefaultSession();
-      webId = session.info.webId;
+      let webId = session.info.webId;
       profile = await fetchUserProfile(webId); 
       if (url) {
         window.history.pushState({},undefined,url);
@@ -38,14 +38,17 @@
     }
 
     onMount( () => {
-      handleIncomingRedirect({ 
+      sessionInfo = handleIncomingRedirect({ 
           restorePreviousSession: true,
           url: window.location.href
       });
     });
 </script>
 
-{#if ! profile}
+{#await sessionInfo}
+{:then info} 
+  
+{#if ! (info && info.isLoggedIn) }
    {#if showConnect}
       <button on:click|preventDefault={onConnect}>Login</button> 
    {:else}
@@ -70,3 +73,5 @@
    </form>
    {/if}
 {/if}
+
+{/await}
