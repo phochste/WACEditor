@@ -59,6 +59,14 @@ The URL of the resource you want to protect:
        on:change={(e) => readACL(e.target.value)} 
        value={resource} 
        size="80"/>
+<button on:click={ () => readACL(resource)} size="30">
+<img src="images/reload.png" 
+     alt="Reload" 
+     title="Reload"
+     width="20"
+     height="20"
+     >
+</button>
 </p>
 
 {#if resource}
@@ -103,9 +111,9 @@ The URL of the resource you want to protect:
                 class="warning" title="everyone can append here!">✓</td>
             {:else}
             <td on:click={() => writeACL(acl, 'append', true)}
-                class="safe">𐄂</td>
+                class="safe" title="public can't append here">𐄂</td>
             {/if}
-            {#if acl['controlWrite']}
+            {#if acl['control']}
             <td on:click={() => writeACL(acl, 'control', false)}
                 class="fatal" title="everyone can control your pod!!!">✓ (!!)</td>
             {:else}
@@ -113,13 +121,45 @@ The URL of the resource you want to protect:
                 class="safe" title="public can't control this">𐄂</td>
             {/if}
          </tr>
+      {:else if acl['agent'] == '#group'}
+         <tr>
+            <td><i>Group</i> {acl['id']}</td>
+            {#if acl['read']}
+            <td on:click={() => writeACL(acl, 'read', false)}
+                class="safe" title="group can read this">✓</td>
+            {:else}
+            <td on:click={() => writeACL(acl, 'read', true)}
+                class="safe" title="group can't read this">𐄂</td>
+            {/if}
+            {#if acl['write']}
+            <td on:click={() => writeACL(acl, 'write', false)}
+                class="danger" title="group can write here!!">✓ (!)</td>
+            {:else}
+            <td on:click={() => writeACL(acl, 'write', true)}
+                class="safe" title="group can't write here">𐄂</td>
+            {/if}
+            {#if acl['append']}
+            <td on:click={() => writeACL(acl, 'append', false)}
+                class="warning" title="group can append here!">✓</td>
+            {:else}
+            <td on:click={() => writeACL(acl, 'append', true)}
+                class="safe" title="group can't append here">𐄂</td>
+            {/if}
+            {#if acl['control']}
+            <td on:click={() => writeACL(acl, 'control', false)}
+                class="fatal" title="group can control your pod!!!">✓ (!!)</td>
+            {:else}
+            <td on:click={() => writeACL(acl, 'control', true)}
+                class="safe" title="group can't control this">𐄂</td>
+            {/if}
+         </tr>
       {:else}
          <tr>
-            {#if !acl['agent'].match(/^mailto/)}
-               {#if acl['agent'] == profile.webId }
+            {#if !acl['id'].match(/^mailto/)}
+               {#if acl['id'] == profile.webId }
                <td><i>You</i></td>
                {:else}
-               <td><i>{acl['agent]']}</i></td>
+               <td><i>{acl['id]']}</i></td>
                {/if}
                <td on:click={() => writeACL(acl, 'read', !acl['read'])}>{#if acl['read']}✓{:else}𐄂{/if}</td>
                <td on:click={() => writeACL(acl, 'write', !acl['write'])}>{#if acl['write']}✓{:else}𐄂{/if}</td>

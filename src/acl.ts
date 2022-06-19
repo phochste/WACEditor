@@ -1,7 +1,8 @@
 import { 
-   universalAccess ,  
    getSolidDatasetWithAcl,
+   getResourceInfoWithAcl,
    getPublicAccess,
+   getGroupAccessAll,
    getAgentAccessAll,
    hasResourceAcl,
    hasFallbackAcl,
@@ -9,13 +10,20 @@ import {
    createAclFromFallbackAcl,
    getResourceAcl,
    saveAclFor,
+   setPublicResourceAccess,
+   setPublicDefaultAccess,
+   setGroupResourceAccess,
+   setGroupDefaultAccess,
    setAgentResourceAccess,
-   setPublicResourceAccess
+   setAgentDefaultAccess,
+   createAcl,
+   type WithAccessibleAcl
    } from "@inrupt/solid-client";
 import { fetch } from '@inrupt/solid-client-authn-browser';
 
 export type ACLType = {
     agent: string ,
+    id: string,
     default: boolean,
     read:  boolean,
     write: boolean,
@@ -24,7 +32,6 @@ export type ACLType = {
 };
 
 export async function getAcl(resource: string) : Promise<ACLType[] | null> {
-   //return getUniversalACL(resource);
    return getWACACL(resource);
 }
 
@@ -34,31 +41,47 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
    const acls : ACLType[] = [];
 
    try {
-      const myDatasetWithAcl = await getSolidDatasetWithAcl(resource, {
+      const resourceInfo = await getResourceInfoWithAcl(resource, {
          fetch: fetch
       });
 
-      const publicAccess = getPublicAccess(myDatasetWithAcl);
+      const publicAccess = getPublicAccess(resourceInfo);
 
       acls.push( {
          agent: '#public' ,
+         id: undefined,
+         default: false,
          read: publicAccess['read'] ,
          write: publicAccess['write'] ,
          append: publicAccess['append'] ,
          control: publicAccess['control']
       } as ACLType);
 
-      const accessByAgent = getAgentAccessAll(myDatasetWithAcl);
+      const groupAccess = getGroupAccessAll(resourceInfo);
 
-      console.log(accessByAgent);
-
-      for (const agent in accessByAgent) {
+      for (const agent in groupAccess) {
          acls.push( {
-            agent: agent ,
-            read: accessByAgent[agent]['read'] ,
-            write: accessByAgent[agent]['write'] ,
-            append: accessByAgent[agent]['append'] ,
-            control: accessByAgent[agent]['control']
+            agent: '#group' ,
+            id: agent,
+            default: false,
+            read: groupAccess[agent]['read'] ,
+            write: groupAccess[agent]['write'] ,
+            append: groupAccess[agent]['append'] ,
+            control: groupAccess[agent]['control']
+         } as ACLType);
+      }
+
+      const agentAccess = getAgentAccessAll(resourceInfo);
+
+      for (const agent in agentAccess) {
+         acls.push( {
+            agent: '#agent' ,
+            id: agent,
+            default: false,
+            read: agentAccess[agent]['read'] ,
+            write: agentAccess[agent]['write'] ,
+            append: agentAccess[agent]['append'] ,
+            control: agentAccess[agent]['control']
          } as ACLType);
       }
    }
@@ -67,79 +90,57 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
       return null;
    }
 
+   console.log(acls);
+
    return acls;
 }
 
-async function getUniversalACL(resource:string) : Promise<ACLType[] | null> {
-   console.log(`getUniversalACL(${resource})`);
-
-   const acls : ACLType[] = [];
-
-   try {
-         const aclPublic = await universalAccess.getPublicAccess(resource, {
-            fetch: fetch
-         });
-
-        acls.push({ 
-            agent: '#public' ,
-            read: aclPublic['read'],
-            write: aclPublic['write'],
-            append: aclPublic['append'],
-            control: aclPublic['controlRead'] || aclPublic['controlWrite'] 
-        } as ACLType);
-        
-        const aclAgent = await universalAccess.getAgentAccessAll(resource, {
-            fetch: fetch
-        });
-
-        for (const [agent,acl] of Object.entries(aclAgent)) {
-            acls.push({
-               agent: agent ,
-               read: acl['read'],
-               write: acl['write'],
-               append: acl['append'],
-               control: acl['controlRead'] || aclAgent['controlWrite']
-            } as ACLType);
-        }
-   }
-   catch(e) {
-      console.log(`Universal error ${e}`);
-      return null;
-   }
-
-    return acls;
-}
-
 export async function setAcl(resource: string, acl : ACLType) : Promise<boolean | null> {
-   //return setUniversalACL(resource,acl);
    return setWACACL(resource,acl);
 }
 
 export async function setWACACL(resource: string, acl: ACLType) : Promise<boolean | null> {
-   console.log(`setWACACL(${resource},${acl}`);
+   console.log(`setWACACL(${resource}}`);
+   console.log(acl);
 
-   let result : boolean;
+   let result : boolean = false;
 
    try {
       // Fetch the SolidDataset and its associated ACLs, if available:
-      const myDatasetWithAcl = await getSolidDatasetWithAcl(resource, {
+      let myDatasetWithAcl = await getSolidDatasetWithAcl(resource, {
          fetch: fetch
       });
 
       let resourceAcl;
-      if (!hasResourceAcl(myDatasetWithAcl)) {
-         if (!hasAccessibleAcl(myDatasetWithAcl)) {
-            console.log("The current user does not have permission to change access rights to this Resource.");
-            return false;
-         }
-         if (!hasFallbackAcl(myDatasetWithAcl)) {
-            console.log( "The current user does not have permission to see who currently has access to this Resource.");
-            return false;
-         }
-         resourceAcl = createAclFromFallbackAcl(myDatasetWithAcl);
+
+      if (hasResourceAcl(myDatasetWithAcl)) {
+         console.info('found resource ACL');
+         resourceAcl = getResourceAcl(myDatasetWithAcl);
       }
       else {
-         resourceAcl = getResourceAcl(myDatasetWithAcl);
+         try {
+            if (hasFallbackAcl(myDatasetWithAcl) && hasAccessibleAcl(myDatasetWithAcl)) {
+               console.info('found fallback ACL');
+               resourceAcl = createAclFromFallbackAcl(myDatasetWithAcl);
+            }
+            else if (hasAccessibleAcl(myDatasetWithAcl)) {
+               console.log('create new ACL');
+               resourceAcl = createAcl(myDatasetWithAcl);
+            }
+            else {
+               console.error('no ACL found in the root');
+               throw new Error('No acl found in the root');
+            }
+         }
+         catch (e) {
+            console.error('failed to initialize ACL');
+            throw new Error('No way found to initialize the ACL');
+         }
+      }
+
+      if (! resourceAcl) {
+         console.error('You have no permission to edit ${resource} ACL');
+         return null;
       }
 
       const aclUpdate = {
@@ -152,48 +153,44 @@ export async function setWACACL(resource: string, acl: ACLType) : Promise<boolea
       let updatedAcl;
 
       if (acl['agent'] == '#public') {
-         updatedAcl = setPublicResourceAccess(resourceAcl,aclUpdate);
+         if (acl['default']) {
+            updatedAcl = setPublicDefaultAccess(resourceAcl,aclUpdate);
+         }
+         else {
+            updatedAcl = setPublicResourceAccess(resourceAcl,aclUpdate);
+         }
+      }
+      else if (acl['agent'] == '#group') {
+         if (acl['default']) {
+            updatedAcl = setGroupDefaultAccess(resourceAcl, acl['id'],aclUpdate);
+         }
+         else {
+            updatedAcl = setGroupResourceAccess(resourceAcl, acl['id'],aclUpdate);
+         } 
+      }
+      else if (acl['agent'] == '#agent') {
+         if (acl['default']) {
+            updatedAcl = setAgentDefaultAccess(resourceAcl, acl['id'],aclUpdate);
+         }
+         else {
+            updatedAcl = setAgentResourceAccess(resourceAcl, acl['id'],aclUpdate);
+         }
       }
       else {
-         updatedAcl = setAgentResourceAccess(resourceAcl, acl['agent'] ,aclUpdate);
+         console.error(`unknown agent ${acl['agent']}`);
+         return null;
       }
 
-      result = await saveAclFor(myDatasetWithAcl, updatedAcl, {
-         fetch: fetch
-      }) ? true : false;
+      if (updatedAcl && hasAccessibleAcl(myDatasetWithAcl)) {
+         result = await saveAclFor(myDatasetWithAcl as WithAccessibleAcl, updatedAcl, {
+            fetch: fetch
+         }) ? true : false;
+      }
    }
    catch (e) {
-      console.log(`WAC error ${e}`);
+      console.error(`WAC error ${e}`);
       return null;
    }
 
    return result;
-}
-
-export async function setUniversalACL(resource: string, acl: ACLType) : Promise<boolean | null> {
-   console.log(`setUniversalACL(${resource},${acl}`);
-
-   let result : any;
-   try {
-      const aclUpdate = {
-         read: acl['read'] ,
-         write: acl['write'] ,
-         append: acl['append'] ,
-         controlRead: acl['control'] ,
-         controlWrite: acl['control']
-      };
-
-      if ( acl['agent'] == '#public' ) { 
-         result = await universalAccess.setPublicAccess(resource, aclUpdate, {fetch : fetch})
-      }
-      else {
-         result = await universalAccess.setAgentAccess(resource, acl['agent'], aclUpdate, {fetch : fetch})
-      }
-    }  
-    catch(e) {
-       console.log(e);
-       return null;
-    }
-
-    return result ? true : false;
 }
