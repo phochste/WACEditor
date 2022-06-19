@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { handleIncomingRedirect, login, onSessionRestore, getDefaultSession, onLogin, onLogout } from '@inrupt/solid-client-authn-browser';
-    import { session_url} from './store';
     import { fetchUserProfile } from './util';
     import type { ProfileType } from './util';
 
@@ -25,6 +24,9 @@
 
     onLogin( () => sessionChanged() );
     onSessionRestore( (url) => sessionChanged(url));
+    onLogout( () => {
+      profile = undefined;
+    });
 
     async function sessionChanged(url?: string) {
       let session = getDefaultSession();
@@ -32,7 +34,6 @@
       profile = await fetchUserProfile(webId); 
       if (url) {
         window.history.pushState({},undefined,url);
-        session_url.update( () => url );
       }
     }
 

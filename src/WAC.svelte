@@ -2,7 +2,7 @@
    import type { ProfileType } from './util';
    import type { ACLType } from './acl';
    import { getAcl, setAcl } from './acl';
-   import { session_url } from './store';
+   import { onSessionRestore } from '@inrupt/solid-client-authn-browser';
 
    export let profile : ProfileType;
    export let resource : string;
@@ -10,24 +10,20 @@
    let acls : ACLType[];
    let error : string;
 
-   session_url.subscribe(url => {
-      if (url) {
-         getResource(url);
-      }
-   });
+   onSessionRestore( (url) => setResource(url)); 
 
 $: if (resource && profile) {
       readACL(resource);
 }
 
-   function getResource(url: string) {
+   function setResource(url: string) {
       let queryString = url.replace(/.*\?/,'');
       console.log(`queryString: %s`, queryString);
 		const urlParams = new URLSearchParams(queryString);
       console.log(`urlParams: %O`, urlParams);
 		const newResource = urlParams.get('resource');
 
-      if (! resource || (resource && newResource != resource)) {
+      if (newResource && ( ! resource || (resource && newResource != resource))) {
 		   console.log(`resource: ${newResource}`);
 		   resource = newResource;
       }
