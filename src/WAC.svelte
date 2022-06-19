@@ -35,8 +35,63 @@ $: if (resource && profile) {
       }
    }
 
+   function parseForm(formData) {
+      const data = {
+         id: undefined ,
+         read: false,
+         write: false,
+         append: false,
+         control: false
+      };
+
+      for (let field of formData) {
+         const [key, value] = field;
+         if (key == 'id') {
+            data['id'] = value;
+         }
+         else if (key == 'rights') {
+            data[value] = true;
+         }
+      }
+      return data;
+   }
+
+   function onAgentAcl(e) {
+      const data = parseForm(new FormData(e.target));
+
+      if (data['id'] && data['id'].match(/^http(s)?:\/\//)) {
+         writeACL({
+            agent: '#agent',
+            ...data
+         } as ACLType, undefined, undefined);
+         
+         e.target.reset();
+      }
+      else {
+         alert(`${data['id']} doesn't like as a valid person. Need a URL`);
+      }
+   }
+
+   function onGroupAcl(e) {
+      const data = parseForm(new FormData(e.target));
+
+      if (data['id'] && data['id'].match(/^http(s)?:\/\//)) {
+         writeACL({
+            agent: '#group',
+            ...data
+         } as ACLType, undefined, undefined);
+
+         e.target.reset();
+      }
+      else {
+         alert(`${data['id']} doesn't like as a valid group. Need a URL`);
+      }
+   }
+
    async function writeACL(acl: ACLType, field : string, value: boolean) {
+      if (field) {
       acl[field] = value;
+      }
       await setAcl(resource,acl);
       await readACL(resource);
    }
@@ -177,6 +232,34 @@ The URL of the resource you want to protect:
      <p class="error">...One moment please...</p>
   {/if}
 {/if}
+
+<hr>
+
+<p><b>Step 3:</b> You need to add more access rights?</p>
+
+<p><b>Add access rights for a person</b></p>
+<form id="agentACL" on:submit|preventDefault={onAgentAcl}>
+   Webid: <input type="text" name="id" size="80">
+   Read: <input type="checkbox" name="rights" value="read">
+   Write: <input type="checkbox" name="rights" value="write"> 
+   Append: <input type="checkbox" name="rights" value="append"> 
+   Control: <input type="checkbox" name="rights" value="control"> 
+   <button type="submit">Add</button>
+</form>
+
+<br>
+
+<p><b>Add access rights for a group</b></p>
+<form id="groupACL" on:submit|preventDefault={onGroupAcl}>
+   Group: <input type="text" name="id" size="80">
+   Read: <input type="checkbox" name="rights" value="read">
+   Write: <input type="checkbox" name="rights" value="write"> 
+   Append: <input type="checkbox" name="rights" value="append"> 
+   Control: <input type="checkbox" name="rights" value="control"> 
+   <button type="submit">Add</button>
+</form>
+
+<hr>
 {/if}
 
 <style>
