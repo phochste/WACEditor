@@ -31,7 +31,6 @@
     "dotenv-webpack": "^7.0.3",
     "file-loader": "^6.2.0",
     "gh-pages": "^4.0.0",
-    "mimetype": "^0.0.8",
     "n3": "^1.16.1",
     "save-dev": "^0.0.1-security"
   }
