@@ -2,8 +2,11 @@ import {
    getSolidDatasetWithAcl,
    getResourceInfoWithAcl,
    getPublicAccess,
+   getPublicDefaultAccess,
    getGroupAccessAll,
+   getGroupDefaultAccessAll,
    getAgentAccessAll,
+   getAgentDefaultAccessAll,
    hasResourceAcl,
    hasFallbackAcl,
    hasAccessibleAcl,
@@ -57,6 +60,18 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
          control: publicAccess['control']
       } as ACLType);
 
+      const publicDefaultAccess  = getPublicDefaultAccess(getResourceAcl(resourceInfo));
+
+      acls.push( {
+         agent: '#public' ,
+         id: undefined,
+         default: true,
+         read: publicDefaultAccess['read'] ,
+         write: publicDefaultAccess['write'] ,
+         append: publicDefaultAccess['append'] ,
+         control: publicDefaultAccess['control'] 
+      } as ACLType);
+
       const groupAccess = getGroupAccessAll(resourceInfo);
 
       for (const agent in groupAccess) {
@@ -71,6 +86,20 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
          } as ACLType);
       }
 
+      const groupDefaultAccess = getGroupDefaultAccessAll(getResourceAcl(resourceInfo));
+
+      for (const agent in groupDefaultAccess) {
+         acls.push( {
+            agent: '#group' ,
+            id: agent,
+            default: true,
+            read: groupDefaultAccess[agent]['read'] ,
+            write: groupDefaultAccess[agent]['write'] ,
+            append: groupDefaultAccess[agent]['append'] ,
+            control: groupDefaultAccess[agent]['control']
+         } as ACLType);
+      }
+
       const agentAccess = getAgentAccessAll(resourceInfo);
 
       for (const agent in agentAccess) {
@@ -82,6 +111,20 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
             write: agentAccess[agent]['write'] ,
             append: agentAccess[agent]['append'] ,
             control: agentAccess[agent]['control']
+         } as ACLType);
+      }
+
+      const agentDefaultAccess = getAgentDefaultAccessAll(getResourceAcl(resourceInfo));
+
+      for (const agent in agentDefaultAccess) {
+         acls.push( {
+            agent: '#agent' ,
+            id: agent,
+            default: true,
+            read: agentDefaultAccess[agent]['read'] ,
+            write: agentDefaultAccess[agent]['write'] ,
+            append: agentDefaultAccess[agent]['append'] ,
+            control: agentDefaultAccess[agent]['control']
          } as ACLType);
       }
    }

@@ -3,10 +3,13 @@
    import type { ACLType } from './acl';
    import { getAcl, setAcl } from './acl';
    import { onSessionRestore } from '@inrupt/solid-client-authn-browser';
+   import Toggle from "svelte-toggle";
 
    export let profile : ProfileType;
    export let resource : string;
 
+   let isContainer = false;
+   let isDefault = false ;
    let acls : ACLType[];
    let error : string;
 
@@ -14,6 +17,9 @@
 
 $: if (resource && profile) {
       readACL(resource);
+      if (resource.endsWith('/')) {
+         isContainer = true;
+      }
 }
 
    function setResource(url: string) {
@@ -138,6 +144,15 @@ The URL of the resource you want to protect:
    <b>Step 2:</b> Ok, change access/edit/control for resource <b>{resource}</b> ?
 </p>
 
+   {#if isContainer}
+      <Toggle toggled={isDefault} label="Default" on:toggle={(e) => {isDefault = !isDefault }}/>
+      {#if isDefault}
+         Access controls below are valid for <b>all</b> child resources of the current resource.
+      {:else}
+         Access controls below are only valid for the current resource. 
+      {/if}
+   {/if}
+
   {#if acls}
       <table class="table">
          <thead>
@@ -150,8 +165,8 @@ The URL of the resource you want to protect:
             </tr>
          </thead>
          <tbody>
-      {#each acls as acl}
-      {#if acl['agent'] == '#public'}
+      {#each acls.filter( a => a.default === isDefault) as acl}
+         {#if acl['agent'] == '#public'}
          <tr>
             <td><i>Everyone</i></td>
             {#if acl['read']}
@@ -183,7 +198,7 @@ The URL of the resource you want to protect:
                 class="safe" title="public can't control this">𐄂</td>
             {/if}
          </tr>
-      {:else if acl['agent'] == '#group'}
+         {:else if acl['agent'] == '#group'}
          <tr>
             <td><i>Group</i> {acl['id']}</td>
             {#if acl['read']}
@@ -215,7 +230,7 @@ The URL of the resource you want to protect:
                 class="safe" title="group can't control this">𐄂</td>
             {/if}
          </tr>
-      {:else}
+         {:else}
          <tr>
             {#if !acl['id'].match(/^mailto/)}
                {#if acl['id'] == profile.webId }
@@ -229,7 +244,7 @@ The URL of the resource you want to protect:
                <td on:click={() => writeACL(acl, 'control', !acl['control'])}>{#if acl['control']}✓{:else}𐄂{/if}</td>
             {/if}
          </tr>
-      {/if}
+         {/if}
       {/each}
          </tbody>
       </table>
@@ -238,7 +253,6 @@ The URL of the resource you want to protect:
   {:else}
      <p class="error">...One moment please...</p>
   {/if}
-{/if}
 
 <hr>
 
@@ -267,7 +281,8 @@ The URL of the resource you want to protect:
 </form>
 
 <hr>
-{/if}
+{/if} <!-- resource -->
+{/if} <!-- profile-->
 
 <style>
    .safe {
