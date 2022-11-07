@@ -60,17 +60,37 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
          control: publicAccess['control']
       } as ACLType);
 
-      const publicDefaultAccess  = getPublicDefaultAccess(getResourceAcl(resourceInfo));
+      let resourceAcl = getResourceAcl(resourceInfo);
 
-      acls.push( {
-         agent: '#public' ,
-         id: undefined,
-         default: true,
-         read: publicDefaultAccess['read'] ,
-         write: publicDefaultAccess['write'] ,
-         append: publicDefaultAccess['append'] ,
-         control: publicDefaultAccess['control'] 
-      } as ACLType);
+      if (! resourceAcl) {
+         console.log(`${resource} has no ACL`);
+         if (hasFallbackAcl(resourceInfo) && hasAccessibleAcl(resourceInfo)) {
+            console.info('found fallback ACL');
+            resourceAcl = createAclFromFallbackAcl(resourceInfo);
+         }
+         else if (hasAccessibleAcl(resourceInfo)) {
+            console.log('create new ACL');
+            resourceAcl = createAcl(resourceInfo);
+         }
+         else {
+            console.error('no ACL found in the root');
+            throw new Error('No acl found in the root');
+         }
+      }
+
+      if (resourceAcl) {
+         const publicDefaultAccess  = getPublicDefaultAccess(resourceAcl);
+
+         acls.push( {
+            agent: '#public' ,
+            id: undefined,
+            default: true,
+            read: publicDefaultAccess['read'] ,
+            write: publicDefaultAccess['write'] ,
+            append: publicDefaultAccess['append'] ,
+            control: publicDefaultAccess['control'] 
+         } as ACLType);
+      }
 
       const groupAccess = getGroupAccessAll(resourceInfo);
 
@@ -86,18 +106,20 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
          } as ACLType);
       }
 
-      const groupDefaultAccess = getGroupDefaultAccessAll(getResourceAcl(resourceInfo));
+      if (resourceAcl) {
+         const groupDefaultAccess = getGroupDefaultAccessAll(resourceAcl);
 
-      for (const agent in groupDefaultAccess) {
-         acls.push( {
-            agent: '#group' ,
-            id: agent,
-            default: true,
-            read: groupDefaultAccess[agent]['read'] ,
-            write: groupDefaultAccess[agent]['write'] ,
-            append: groupDefaultAccess[agent]['append'] ,
-            control: groupDefaultAccess[agent]['control']
-         } as ACLType);
+         for (const agent in groupDefaultAccess) {
+            acls.push( {
+               agent: '#group' ,
+               id: agent,
+               default: true,
+               read: groupDefaultAccess[agent]['read'] ,
+               write: groupDefaultAccess[agent]['write'] ,
+               append: groupDefaultAccess[agent]['append'] ,
+               control: groupDefaultAccess[agent]['control']
+            } as ACLType);
+         }
       }
 
       const agentAccess = getAgentAccessAll(resourceInfo);
@@ -114,18 +136,20 @@ async function getWACACL(resource: string) : Promise<ACLType[] | null> {
          } as ACLType);
       }
 
-      const agentDefaultAccess = getAgentDefaultAccessAll(getResourceAcl(resourceInfo));
+      if (resourceAcl) {
+         const agentDefaultAccess = getAgentDefaultAccessAll(resourceAcl);
 
-      for (const agent in agentDefaultAccess) {
-         acls.push( {
-            agent: '#agent' ,
-            id: agent,
-            default: true,
-            read: agentDefaultAccess[agent]['read'] ,
-            write: agentDefaultAccess[agent]['write'] ,
-            append: agentDefaultAccess[agent]['append'] ,
-            control: agentDefaultAccess[agent]['control']
-         } as ACLType);
+         for (const agent in agentDefaultAccess) {
+            acls.push( {
+               agent: '#agent' ,
+               id: agent,
+               default: true,
+               read: agentDefaultAccess[agent]['read'] ,
+               write: agentDefaultAccess[agent]['write'] ,
+               append: agentDefaultAccess[agent]['append'] ,
+               control: agentDefaultAccess[agent]['control']
+            } as ACLType);
+         }
       }
    }
    catch (e) {
