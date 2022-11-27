@@ -72,6 +72,8 @@ $: if (resource && profile) {
    function onAgentAcl(e) {
       const data = parseForm(new FormData(e.target));
 
+      data['default'] = isDefault;
+
       if (data['id'] && data['id'].match(/^http(s)?:\/\//)) {
          writeACL({
             agent: '#agent',
@@ -88,6 +90,8 @@ $: if (resource && profile) {
    function onGroupAcl(e) {
       const data = parseForm(new FormData(e.target));
 
+      data['default'] = isDefault;
+      
       if (data['id'] && data['id'].match(/^http(s)?:\/\//)) {
          writeACL({
             agent: '#group',
@@ -103,7 +107,7 @@ $: if (resource && profile) {
 
    async function writeACL(acl: ACLType, field : string, value: boolean) {
       if (field) {
-      acl[field] = value;
+         acl[field] = value;
       }
       await setAcl(resource,acl);
       await readACL(resource);
